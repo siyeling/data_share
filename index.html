@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      #top {
+          color:coral;
+          display: flex;
+          height:50px;
+      }
+
+      body {
+          background-color:white;
+      }
+
+      select {
+          width: 10%;
+          height: 30px;
+          font-size: 20px;
+      }
+
+      #group_top {
+          width:30%;
+          font-size: 20px;
+          text-align: center;
+      }
+
+      #group_name {
+        width:10%;
+        height:50px;
+        font-size:25px;
+      }
+
+      option {
+          font-size: 20px;
+      }
+
+      .list {
+          display: flex;
+          margin-bottom: 3px;
+          height:50px;
+      }
+
+      input {
+          background-color: aqua;
+          color:red;
+          border-color: aliceblue;
+          width:20%;
+          font-size: 20px;
+      }
+
+      .list_lane {
+          background-color: aliceblue;
+          width:40%;
+          text-align: center;
+          font-size: 30px;
+      }
+
+      #lane_body {
+        display:none;
+      }
+
+      #send {
+        height:10%;
+        font-size:20px;
+        display:flex;
+      }
+
+      #lane_top {
+        width:14%;
+      }
+
+      #send_for {
+        width:8%;
+        height:50px;
+      }
+
+      .data_for {
+        width:36%;
+        text-align:center;
+        height:47px;
+      }
+
+      .sending {
+        width:20%;
+        height:50px;
+        margin-bottom:0px;
+      }
+
+      #description {
+        font-size:20px;
+        width:90%;
+        border:dotted;
+      }
+
+      @media screen and (min-width:500px){
+        html {
+          max-width:500px;
+          table-layout: fixed;
+          font-size:100%;
+        }
+      }
+    </style>
+    <title>System用</title>
+</head>
+<body>
+    <div id="top">
+        <input disabled type="button" id="group_top" value="Group"/>
+        <select name="group_name" id="group_name">
+            <template id="option">
+                <option></option>
+            </template>
+        </select>
+    </div>
+    <div id="lane_body">
+      <div id="send">
+        <input disabled type="button" value="レーン" id="lane_top"/>
+        <select name="send_for" id="send_for"></select>
+        <input type="text" class="data_for"/>
+        <input type="button" class="sending" value="を送信"/>
+      </div>
+    </div>
+    <template id="lane">
+        <div class="list">
+            <input disabled type="button" class="list_button"/>
+            <input type="button" class="list_lane" value="---"></input>
+            <input disabled type="button" class="copy_check" value="---"></input>
+        </div>
+    </template>
+    <div id="description">
+      <ul>
+        <li>セレクトボックスの値を合わせることで指定グループのデータが表示されます.</li>
+        <li>group0は説明用です.</li>
+        <li>IDをクリックすることでデータがコピーされます.</li>
+      </ul>
+    </div>
+</body>
+<script>
+    'use strict'
+
+    //lane毎
+    function GetId(num){
+      const lane = `${document.getElementById("group_name").value}${num}`
+      google.script.run
+        .withSuccessHandler(function(data){
+          //console.log(data);
+          document.getElementsByClassName("list_lane")[num - 1].value = data;
+        })
+        .GetData(lane);
+    }
+
+    //group毎
+    function GetIds(){
+      const group = `${document.getElementById("group_name").value}`;
+      google.script.run
+        .withSuccessHandler(function(data){
+          //console.log(data);
+          if(data == null){
+            //console.log("no data");
+            return;
+          }
+          if(`${document.getElementById("group_name").value}` != group) return;
+          for(let i = 1; i < 5; i++){
+            //console.log(data[i],document.getElementsByClassName("list_lane")[i - 1].value);
+            if(document.getElementsByClassName("list_lane")[i - 1].value != data[i]){
+              document.getElementsByClassName("copy_check")[i - 1].value = "---";
+            }
+            document.getElementsByClassName("list_lane")[i - 1].value = data[i];
+          }
+          console.log("GetData")
+        })
+        .GetGroupData(group);
+    }
+
+    //初期値の入力
+    function ChangeData(){
+      const group = `${document.getElementById("group_name").value}`;
+      google.script.run
+        .withSuccessHandler(function(data){
+          if(`${document.getElementById("group_name").value}` != group) return;
+          if(data == null) return;
+          for(let i = 1; i < 5; i++){
+            //console.log(data[i]);
+            document.getElementsByClassName("list_lane")[i - 1].value = data[i];
+            document.getElementsByClassName("copy_check")[i - 1].value = "---";
+          }
+        })
+        .GetPropertyDatas(group);
+    }
+
+    //optionの作成
+    function CreateOptionNode(num){
+        const template = document.querySelector("#option");
+        const clone = template.content.cloneNode(true);
+        let option = clone.querySelectorAll("option")[0];
+        option.setAttribute("label",num);
+        option.setAttribute("value",num);
+        document.getElementById("group_name").appendChild(clone);
+    }
+
+    //button　node　の作成
+    function CreateListNode(num){
+        const template = document.querySelector("#lane");
+        const clone = template.content.cloneNode(true);
+        let button = clone.querySelectorAll("input");
+        button[0].setAttribute("value",`レーン${num}`);
+        /*button[0].addEventListener(
+            "click",
+            ()=>{
+                GetId(num);
+            }
+        );*/
+        button[1].addEventListener(
+            "click",
+            ()=>{
+                DataCopy(num);
+            }
+        )
+        document.getElementById("lane_body").appendChild(clone);
+    }
+
+    function DataCopy(num){
+        const data = document.getElementsByClassName("list_lane")[num - 1].value;
+        navigator.clipboard.writeText(data)
+            .then(()=>{
+                //console.log("copied");
+                document.getElementsByClassName("copy_check")[num - 1].value = "Copied";
+            })
+    }
+
+    function SendData(){
+      const data = document.getElementsByClassName("data_for")[0].value;
+      const group = document.getElementById("group_name").value;
+      const lane = `${group}${document.getElementById("send_for").value}`
+      google.script.run
+        .withSuccessHandler(()=>{
+          console.log("Send Success");
+          document.getElementsByClassName("sending")[0].value = "を送信"
+        })
+        .SaveData(lane,group,data);
+    }
+
+    function Main(){
+        console.log('OK')
+
+        for(let i = 0; i < 10 ; i++){
+            CreateOptionNode(i);
+        }
+
+        const select = document.getElementById("group_name");
+
+        select.onchange = ()=> {
+            console.log("change");
+            ChangeData();
+            if(document.getElementById("group_name").value == 0){
+              document.getElementById("lane_body").style.display = "none";
+              document.getElementById("description").style.display = "block";
+            }
+            else{
+              document.getElementById("lane_body").style.display = "block";
+              document.getElementById("description").style.display = "none";
+            }
+        }
+
+        document.getElementsByClassName("sending")[0].addEventListener(
+          "click"
+          ,()=>{
+            document.getElementsByClassName("sending")[0].value = "送信中"
+            SendData();
+        })
+
+        
+        for(let i = 1; i < 5; i++){
+          const template = document.querySelector("#option");
+          const clone = template.content.cloneNode(true);
+          let option = clone.querySelectorAll("option")[0];
+          option.setAttribute("label",i);
+          option.setAttribute("value",i);
+          document.getElementById("send_for").appendChild(clone);
+        }
+
+        for(let i = 1; i < 5 ; i++){
+            CreateListNode(i);
+        }
+
+        ChangeData();
+
+        console.log("first setting");
+
+        //リアルタイムのデータ取得
+        setInterval(GetIds,500);
+        //GetIds();
+    }
+
+    Main();
+</script>
+</html>
