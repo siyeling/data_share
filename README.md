@@ -1,2 +1,2 @@
-# data_shere
+# data_share
 Google Apps Scriptをサーバーとし、アクセスできるユーザ間でのクリップボードデータの共有を行います
