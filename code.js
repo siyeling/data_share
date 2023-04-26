@@ -91,17 +91,3 @@ function SetDataSheet(lane,data){
     ).setValue(data);
   return;
 }
-
-function test1(){
-  let tmp1 = new Date().getTime() + 2000;
-  cache.put(`temporally_time${1}`,tmp1);
-  let tmp2 = new Date().getTime();
-  console.log(cache.get(`temporally_time${1}`),tmp2)
-  if(cache.get(`temporally_time${1}`)>=tmp2){
-    console.log("success");
-    let lane = "123";
-    cache.put("temporally_lane",String(lane).slice(0,lane.length -1))
-    console.log(cache.get("temporally_lane"));
-  }
-}
-
